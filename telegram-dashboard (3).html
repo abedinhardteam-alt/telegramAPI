@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telegram Group Manager</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --accent: #2ea6ff;
+    --accent2: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --radius: 10px;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── SETUP SCREEN ── */
+  #setup-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: radial-gradient(ellipse at 50% 0%, #0d2340 0%, var(--bg) 70%);
+  }
+
+  .setup-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 460px;
+    text-align: center;
+  }
+
+  .setup-card .tg-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #2ea6ff, #0066cc);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 28px;
+  }
+
+  .setup-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .setup-card p { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .field-group { text-align: left; margin-bottom: 16px; }
+  .field-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+
+  input[type="text"], input[type="password"], textarea, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: var(--font);
+    transition: border-color .2s;
+    outline: none;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  textarea:focus,
+  select:focus { border-color: var(--accent); }
+
+  .token-row { display: flex; gap: 8px; }
+  .token-row input { flex: 1; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 10px 18px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; transition: opacity .15s, transform .1s;
+    font-family: var(--font);
+  }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #1a8fe3; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-danger { background: #2d1b1b; color: var(--red); border: 1px solid #5a2020; }
+  .btn-danger:hover { background: #3d2020; }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover:not(:disabled) { background: #2ea643; }
+  .btn-full { width: 100%; }
+
+  .token-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .token-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+  }
+  .token-item .t-name { font-size: 13px; font-weight: 600; }
+  .token-item .t-val { font-size: 11px; color: var(--muted); font-family: monospace; }
+  .token-item .remove-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; line-height: 1; }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  }
+  .badge-ok { background: #0d2d0d; color: var(--green); }
+  .badge-err { background: #2d0d0d; color: var(--red); }
+  .badge-loading { background: #1a1a2d; color: var(--accent); }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* ── MAIN DASHBOARD ── */
+  #dashboard { display: none; min-height: 100vh; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-logo { font-size: 18px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+  .topbar-subtitle { font-size: 13px; color: var(--muted); }
+
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* sidebar */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    overflow-y: auto; max-height: calc(100vh - 56px);
+  }
+
+  .sidebar-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 4px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+
+  .group-list { display: flex; flex-direction: column; gap: 4px; }
+
+  .group-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius);
+    cursor: pointer; transition: background .15s;
+    border: 1px solid transparent;
+  }
+  .group-item:hover { background: var(--surface2); }
+  .group-item.active { background: #0d1e33; border-color: #1a4070; }
+  .group-item.selected-for-send { border-color: var(--accent); background: #091524; }
+
+  .group-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a3a5c, #0066cc);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .group-info { flex: 1; min-width: 0; }
+  .group-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .group-meta { font-size: 11px; color: var(--muted); }
+
+  .group-check {
+    width: 18px; height: 18px; border-radius: 4px;
+    border: 2px solid var(--border); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all .15s;
+  }
+  .group-item.selected-for-send .group-check {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+
+  /* content */
+  .content { padding: 24px; overflow-y: auto; max-height: calc(100vh - 56px); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header { margin-bottom: 24px; }
+  .page-header h2 { font-size: 20px; font-weight: 700; }
+  .page-header p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  /* stats grid */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px; margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 800; color: var(--accent); }
+
+  /* compose panel */
+  .compose-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .compose-panel h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  .compose-options { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .compose-opt {
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); background: var(--bg);
+    color: var(--muted); transition: all .15s;
+  }
+  .compose-opt.active { background: #0d1e33; color: var(--accent); border-color: var(--accent); }
+
+  textarea.msg-input {
+    min-height: 110px; resize: vertical;
+    font-size: 14px; line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  /* photo attach */
+  .photo-attach { margin-bottom: 14px; }
+  .photo-preview-box {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px; margin-top: 10px;
+  }
+  .photo-preview-box img {
+    width: 56px; height: 56px; object-fit: cover; border-radius: 8px;
+    flex-shrink: 0; border: 1px solid var(--border);
+  }
+  .photo-preview-info { flex: 1; min-width: 0; }
+  .photo-preview-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .photo-preview-size { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .caption-limit-note { font-size: 12px; color: var(--yellow); margin: -2px 0 10px; display: none; }
+
+  .compose-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .compose-footer-left { font-size: 13px; color: var(--muted); }
+  .sel-count { color: var(--accent); font-weight: 700; }
+
+  /* send progress */
+  .send-progress { margin-top: 16px; display: none; flex-direction: column; gap: 8px; }
+  .prog-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; font-size: 13px;
+  }
+  .prog-item .prog-name { flex: 1; }
+  .prog-spin { animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* log */
+  .log-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .log-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 700;
+  }
+  .log-body { padding: 10px; max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .log-entry {
+    padding: 8px 12px; border-radius: 7px;
+    font-size: 12px; line-height: 1.5; font-family: monospace;
+  }
+  .log-ok { background: #091e09; color: #4cc955; }
+  .log-err { background: #1e0909; color: #f85149; }
+  .log-info { background: #0d1a2d; color: #6ab7ff; }
+
+  /* group detail page */
+  .group-detail-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .group-detail-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a3a5c, #0066cc);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700;
+  }
+  .gd-name { font-size: 18px; font-weight: 700; }
+  .gd-id { font-size: 12px; color: var(--muted); font-family: monospace; margin-top: 2px; }
+  .gd-type { font-size: 12px; color: var(--accent); margin-top: 4px; }
+  .gd-seen { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+
+  /* alerts */
+  .alert {
+    padding: 12px 16px; border-radius: var(--radius); font-size: 13px;
+    margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .alert-warn { background: #1f1700; border: 1px solid #4a3500; color: #e3b341; }
+  .alert-info { background: #0d1a2d; border: 1px solid #1a3a5c; color: #79b8ff; }
+
+  /* toast */
+  #toast-container {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 9999;
+  }
+  .toast {
+    padding: 12px 18px; border-radius: var(--radius);
+    font-size: 13px; font-weight: 600;
+    animation: slideIn .2s ease;
+    max-width: 320px;
+  }
+  .toast-ok { background: var(--green); color: #000; }
+  .toast-err { background: var(--red); color: #fff; }
+  .toast-info { background: var(--accent); color: #fff; }
+  @keyframes slideIn { from { opacity:0; transform: translateX(30px); } to { opacity:1; transform: translateX(0); } }
+
+  /* nav tabs */
+  .nav-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .nav-tab {
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    color: var(--muted); cursor: pointer; border: none;
+    background: none; border-bottom: 2px solid transparent;
+    transition: all .15s; font-family: var(--font);
+    margin-bottom: -1px;
+  }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-tab:hover:not(.active) { color: var(--text); }
+
+  /* settings page */
+  .settings-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .settings-section h3 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-label { font-size: 13px; }
+  .settings-row-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* token badge in topbar */
+  .token-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; background: var(--surface2); border: 1px solid var(--border);
+  }
+
+  /* empty state */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* AI auto-reply */
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--border); transition: .2s; border-radius: 24px;
+  }
+  .switch .slider:before {
+    position: absolute; content: ""; height: 18px; width: 18px;
+    left: 3px; bottom: 3px; background: #fff; transition: .2s; border-radius: 50%;
+  }
+  .switch input:checked + .slider { background: var(--green); }
+  .switch input:checked + .slider:before { transform: translateX(18px); }
+
+  .ai-group-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--bg);
+  }
+  .ai-group-row + .ai-group-row { margin-top: 8px; }
+  .ai-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; color: var(--green);
+    margin-top: 6px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* responsive */
+  @media (max-width: 700px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .sidebar { max-height: 240px; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SETUP SCREEN
+══════════════════════════════════════════ -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="tg-icon">✈</div>
+    <h1>Telegram Group Manager</h1>
+    <p>Bot token add করুন এবং Dashboard এ প্রবেশ করুন</p>
+
+    <div class="field-group">
+      <label>Bot Name (আপনার পরিচিত নাম)</label>
+      <input type="text" id="new-bot-name" placeholder="যেমন: My Main Bot">
+    </div>
+    <div class="field-group">
+      <label>Bot Token</label>
+      <div class="token-row">
+        <input type="password" id="new-bot-token" placeholder="123456789:ABCDEFGHijklmnop...">
+        <button class="btn btn-ghost" onclick="toggleTokenVis('new-bot-token', this)">👁</button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="addToken()" style="margin-bottom:16px">
+      + Token যোগ করুন
+    </button>
+
+    <div id="token-list-setup" class="token-list"></div>
+
+    <div style="margin-top:20px">
+      <button class="btn btn-green btn-full" id="enter-btn" onclick="enterDashboard()" disabled>
+        Dashboard এ যান →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN DASHBOARD
+══════════════════════════════════════════ -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">✈ TG Manager</div>
+      <div class="topbar-subtitle" id="tb-subtitle">লোড হচ্ছে...</div>
+    </div>
+    <div class="topbar-right">
+      <div class="token-badge" id="active-bot-badge">—</div>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="refreshGroups()">⟳ Refresh</button>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="goSetup()">⚙ Settings</button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- SIDEBAR: group list -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Groups</span>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="toggleSelectAll()">সব সিলেক্ট</button>
+      </div>
+
+      <!-- Bot selector -->
+      <div id="bot-selector" style="display:flex;flex-direction:column;gap:6px"></div>
+
+      <div id="group-list-sidebar" class="group-list">
+        <div class="empty-state" style="padding:30px 10px">
+          <div class="empty-icon">🔄</div>
+          <p>Groups লোড হচ্ছে...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <!-- NAV TABS -->
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showPage('page-send', this)">📤 Message পাঠান</button>
+        <button class="nav-tab" onclick="showPage('page-groups', this)">📋 Groups Info</button>
+        <button class="nav-tab" onclick="showPage('page-ai', this)">🤖 AI Auto-Reply</button>
+        <button class="nav-tab" onclick="showPage('page-log', this)">📜 Activity Log</button>
+      </div>
+
+      <!-- PAGE: SEND MESSAGE -->
+      <div id="page-send" class="page active">
+        <div class="page-header">
+          <h2>Message পাঠান</h2>
+          <p>একসাথে একাধিক group-এ message ও ছবি পাঠান</p>
+        </div>
+
+        <div class="compose-panel">
+          <h3>✏️ Message লিখুন</h3>
+
+          <div class="compose-options" id="parse-opts">
+            <div class="compose-opt active" data-mode="Markdown" onclick="setParseMode(this)">Markdown</div>
+            <div class="compose-opt" data-mode="HTML" onclick="setParseMode(this)">HTML</div>
+            <div class="compose-opt" data-mode="" onclick="setParseMode(this)">Plain Text</div>
+          </div>
+
+          <div class="photo-attach">
+            <input type="file" id="msg-photo" accept="image/*" style="display:none" onchange="handlePhotoSelect(event)">
+            <button class="btn btn-ghost" id="photo-attach-btn" type="button" onclick="document.getElementById('msg-photo').click()">
+              📷 ছবি যুক্ত করুন
+            </button>
+            <div id="photo-preview-wrap" style="display:none">
+              <div class="photo-preview-box">
+                <img id="photo-preview-img" src="" alt="preview">
+                <div class="photo-preview-info">
+                  <div id="photo-preview-name" class="photo-preview-name"></div>
+                  <div id="photo-preview-size" class="photo-preview-size"></div>
+                </div>
+                <button class="remove-btn" onclick="removePhoto()" title="ছবি মুছুন">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="caption-limit-note" class="caption-limit-note">⚠ ছবির সাথে caption সর্বোচ্চ 1024 অক্ষর হতে পারবে।</div>
+
+          <textarea class="msg-input" id="msg-text" placeholder="এখানে message লিখুন...&#10;&#10;Markdown সাপোর্ট: **bold**, _italic_, `code`, [link](url)"></textarea>
+
+          <div class="compose-footer">
+            <div class="compose-footer-left">
+              <span class="sel-count" id="sel-count">0</span> টি group সিলেক্ট করা হয়েছে
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost" onclick="clearMsg()">Clear</button>
+              <button class="btn btn-primary" id="send-btn" onclick="sendMessages()" disabled>
+                ✈ পাঠান
+              </button>
+            </div>
+          </div>
+
+          <div class="send-progress" id="send-progress"></div>
+        </div>
+
+        <div class="log-section">
+          <div class="log-header">
+            <span>📜 Live Log</span>
+            <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="clearLog()">Clear</button>
+          </div>
+          <div class="log-body" id="live-log">
+            <div class="log-entry log-info">Dashboard ready. Bot token যোগ করুন এবং groups লোড করুন।</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: GROUPS INFO -->
+      <div id="page-groups" class="page">
+        <div class="page-header">
+          <h2>Groups তথ্য</h2>
+          <p>Bot যে সব group-এ আছে তার বিস্তারিত</p>
+        </div>
+        <div class="alert alert-info">
+          <span>ℹ️</span>
+          <span>Telegram, group এর actual creation date bot-কে দেয় না। নিচে "প্রথম শনাক্ত" তারিখ দেখানো হয়েছে — যেদিন bot প্রথম এই group/channel-টি খুঁজে পেয়েছে, এই ডিভাইসে সংরক্ষিত।</span>
+        </div>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="stat-label">মোট Groups</div><div class="stat-value" id="stat-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">Supergroups</div><div class="stat-value" id="stat-super">—</div></div>
+          <div class="stat-card"><div class="stat-label">Regular Groups</div><div class="stat-value" id="stat-reg">—</div></div>
+          <div class="stat-card"><div class="stat-label">Channels</div><div class="stat-value" id="stat-chan">—</div></div>
+        </div>
+        <div id="groups-detail-list" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+
+      <!-- PAGE: AI AUTO-REPLY -->
+      <div id="page-ai" class="page">
+        <div class="page-header">
+          <h2>AI Auto-Reply (Groq)</h2>
+          <p>Group এ message আসলে Groq AI দিয়ে automatic reply পাঠানো হবে</p>
+        </div>
+
+        <div class="alert alert-warn">
+          <span>⚠️</span>
+          <span>
+            Bot group-এর <b>সব</b> message দেখতে পারার জন্য <b>@BotFather</b>-এ গিয়ে <code>/setprivacy</code> কমান্ড দিয়ে bot-এর Privacy Mode <b>Disable</b> করুন, অথবা bot-কে group-এ <b>Admin</b> বানান — নাহলে bot শুধু mention/reply করা message-ই দেখতে পাবে।<br><br>
+            এই ফিচারটি এই ব্রাউজার ট্যাব খোলা থাকা পর্যন্তই active থাকবে (এটি একটি client-side polling loop, server-side নয়) — ট্যাব বন্ধ করলে বা পেজ রিলোড দিলে Auto-Reply বন্ধ হয়ে যাবে এবং পুনরায় "চালু করুন" চাপতে হবে।
+          </span>
+        </div>
+
+        <div class="compose-panel">
+          <h3>🔑 Groq API Settings</h3>
+          <div class="field-group">
+            <label>Groq API Key</label>
+            <div class="token-row">
+              <input type="password" id="groq-key-input" placeholder="gsk_...">
+              <button class="btn btn-ghost" onclick="toggleTokenVis('groq-key-input', this)">👁</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Model</label>
+            <select id="groq-model-select">
+              <option value="openai/gpt-oss-20b">openai/gpt-oss-20b — দ্রুত ও সাশ্রয়ী (default)</option>
+              <option value="openai/gpt-oss-120b">openai/gpt-oss-120b — উচ্চ মানের</option>
+              <option value="moonshotai/kimi-k2-instruct">moonshotai/kimi-k2-instruct</option>
+              <option value="qwen/qwen3.6-27b">qwen/qwen3.6-27b</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>System Prompt (AI কীভাবে reply দেবে তার নির্দেশনা)</label>
+            <textarea id="groq-prompt-input" style="min-height:90px"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="saveGroqSettingsFromUI()">💾 Settings সেভ করুন</button>
+        </div>
+
+        <div class="compose-panel">
+          <h3>⚡ Auto-Reply নিয়ন্ত্রণ</h3>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">স্ট্যাটাস</div>
+              <div class="settings-row-sub" id="ai-status-sub">বন্ধ আছে</div>
+            </div>
+            <span class="status-badge badge-err" id="ai-status-badge"><span class="dot"></span> বন্ধ</span>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn btn-green" id="ai-start-btn" onclick="startAIAutoReply()">▶ চালু করুন</button>
+            <button class="btn btn-danger" id="ai-stop-btn" onclick="stopAIAutoReply()" disabled>⏹ বন্ধ করুন</button>
+          </div>
+        </div>
+
+        <div class="compose-panel">
+          <h3>✅ যে Groups-এ AI Reply চালু থাকবে</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">যে group-এর toggle ON করবেন, <b>কেবল সেই group</b>-গুলোতেই AI automatically reply দেবে — বাকিগুলোতে কোনো reply যাবে না।</p>
+          <div id="ai-group-list" class="group-list"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: LOG -->
+      <div id="page-log" class="page">
+        <div class="page-header">
+          <h2>Activity Log</h2>
+          <p>সমস্ত কার্যক্রমের রেকর্ড</p>
+        </div>
+        <div class="log-section">
+          <div class="log-header">
+            <span>সমস্ত কার্যক্রম</span>
+            <button class="btn btn-danger" style="font-size:11px;padding:4px 10px" onclick="clearFullLog()">সব মুছুন</button>
+          </div>
+          <div class="log-body" id="full-log" style="max-height:500px">
+            <div class="log-entry log-info">কোনো কার্যক্রম নেই।</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let bots = [];          // [{name, token, status}]
+let activeBotIdx = 0;
+let allGroups = [];     // [{id, name, type}]
+let selectedGroups = new Set();
+let parseMode = 'Markdown';
+let activityLog = [];
+let selectedPhotoFile = null;
+let groupFirstSeen = {}; // { [chatId]: isoTimestamp } — when bot first detected this group (local record)
+
+// AI Auto-Reply (Groq)
+let groqApiKey = '';
+let groqModel = 'openai/gpt-oss-20b';
+let groqSystemPrompt = 'তুমি একজন সহায়ক, বন্ধুত্বপূর্ণ AI assistant। ব্যবহারকারীর message-এর সংক্ষিপ্ত, স্পষ্ট ও বিনয়ী জবাব দাও। ব্যবহারকারী যে ভাষায় লিখেছে (বাংলা/ইংরেজি) সেই ভাষাতেই উত্তর দাও। উত্তর খুব বেশি লম্বা করবে না।';
+let aiEnabledGroups = new Set(); // group ids where auto-reply is allowed to respond
+let aiPollingActive = false;
+let aiUpdateOffset = 0;
+let aiActiveToken = null;
+let aiActiveBotName = '';
+
+// ═══════════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════════
+function save() {
+  try {
+    localStorage.setItem('tgm_bots', JSON.stringify(bots.map(b => ({name:b.name, token:b.token}))));
+    localStorage.setItem('tgm_log', JSON.stringify(activityLog.slice(-200)));
+  } catch(e) {}
+}
+
+function saveFirstSeen() {
+  try {
+    localStorage.setItem('tgm_first_seen', JSON.stringify(groupFirstSeen));
+  } catch(e) {}
+}
+
+function load() {
+  try {
+    const b = localStorage.getItem('tgm_bots');
+    if (b) bots = JSON.parse(b).map(x => ({...x, status:'idle'}));
+    const l = localStorage.getItem('tgm_log');
+    if (l) activityLog = JSON.parse(l);
+    const fs = localStorage.getItem('tgm_first_seen');
+    if (fs) groupFirstSeen = JSON.parse(fs);
+  } catch(e) {}
+}
+
+function loadGroqSettings() {
+  try {
+    const s = localStorage.getItem('tgm_groq');
+    if (s) {
+      const o = JSON.parse(s);
+      groqApiKey = o.apiKey || '';
+      groqModel = o.model || groqModel;
+      groqSystemPrompt = (typeof o.systemPrompt === 'string' && o.systemPrompt) ? o.systemPrompt : groqSystemPrompt;
+    }
+  } catch(e) {}
+}
+
+function saveGroqSettings() {
+  try {
+    localStorage.setItem('tgm_groq', JSON.stringify({
+      apiKey: groqApiKey, model: groqModel, systemPrompt: groqSystemPrompt
+    }));
+  } catch(e) {}
+}
+
+function loadAIGroups() {
+  try {
+    const s = localStorage.getItem('tgm_ai_groups');
+    if (s) aiEnabledGroups = new Set(JSON.parse(s));
+  } catch(e) {}
+}
+
+function saveAIGroups() {
+  try {
+    localStorage.setItem('tgm_ai_groups', JSON.stringify(Array.from(aiEnabledGroups)));
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════
+//  SETUP SCREEN
+// ═══════════════════════════════════════════
+function renderSetupTokens() {
+  const el = document.getElementById('token-list-setup');
+  el.innerHTML = '';
+  bots.forEach((b, i) => {
+    const div = document.createElement('div');
+    div.className = 'token-item';
+    div.innerHTML = `
+      <div>
+        <div class="t-name">${escHtml(b.name)}</div>
+        <div class="t-val">${b.token.slice(0,12)}…</div>
+      </div>
+      <button class="remove-btn" onclick="removeToken(${i})">✕</button>
+    `;
+    el.appendChild(div);
+  });
+  document.getElementById('enter-btn').disabled = bots.length === 0;
+}
+
+function addToken() {
+  const name = document.getElementById('new-bot-name').value.trim();
+  const token = document.getElementById('new-bot-token').value.trim();
+  if (!token) { toast('Token লিখুন', 'err'); return; }
+  if (!token.match(/^\d+:[A-Za-z0-9_-]{30,}$/)) {
+    toast('Token format সঠিক নয়', 'err'); return;
+  }
+  if (bots.find(b => b.token === token)) { toast('এই token আগেই যোগ করা আছে', 'err'); return; }
+  bots.push({ name: name || `Bot ${bots.length+1}`, token, status: 'idle' });
+  document.getElementById('new-bot-name').value = '';
+  document.getElementById('new-bot-token').value = '';
+  save();
+  renderSetupTokens();
+  toast('Token যোগ করা হয়েছে', 'ok');
+}
+
+function removeToken(i) {
+  bots.splice(i, 1);
+  save();
+  renderSetupTokens();
+}
+
+function toggleTokenVis(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁' : '🙈';
+}
+
+async function enterDashboard() {
+  if (bots.length === 0) { toast('কমপক্ষে একটি token যোগ করুন', 'err'); return; }
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  activeBotIdx = 0;
+  renderBotSelector();
+  await refreshGroups();
+  renderFullLog();
+}
+
+function goSetup() {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+  renderSetupTokens();
+}
+
+// ═══════════════════════════════════════════
+//  BOT SELECTOR
+// ═══════════════════════════════════════════
+function renderBotSelector() {
+  const el = document.getElementById('bot-selector');
+  if (bots.length <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">ACTIVE BOT</div>';
+  bots.forEach((b, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn ' + (i === activeBotIdx ? 'btn-primary' : 'btn-ghost');
+    btn.style.cssText = 'font-size:12px;padding:6px 12px;justify-content:flex-start;';
+    btn.textContent = (i === activeBotIdx ? '✓ ' : '') + b.name;
+    btn.onclick = async () => { activeBotIdx = i; renderBotSelector(); await refreshGroups(); };
+    el.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  TELEGRAM API
+// ═══════════════════════════════════════════
+async function tgRequest(method, params = {}, tokenOverride = null) {
+  const token = tokenOverride || bots[activeBotIdx]?.token;
+  if (!token) throw new Error('No token');
+  const url = `https://api.telegram.org/bot${token}/${method}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.description || 'API error');
+  return data.result;
+}
+
+async function getMe(token) {
+  return tgRequest('getMe', {}, token);
+}
+
+async function getUpdates(token) {
+  return tgRequest('getUpdates', { limit: 100, timeout: 0 }, token);
+}
+
+// Uploads an actual image file to Telegram via multipart/form-data.
+// (tgRequest only sends JSON, which can't carry binary file data.)
+async function tgSendPhotoFile(chatId, file, caption, mode, tokenOverride = null) {
+  const token = tokenOverride || bots[activeBotIdx]?.token;
+  if (!token) throw new Error('No token');
+  const url = `https://api.telegram.org/bot${token}/sendPhoto`;
+  const fd = new FormData();
+  fd.append('chat_id', chatId);
+  fd.append('photo', file, file.name || 'photo.jpg');
+  if (caption) fd.append('caption', caption);
+  if (mode) fd.append('parse_mode', mode);
+  const res = await fetch(url, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.description || 'API error');
+  return data.result;
+}
+
+// ═══════════════════════════════════════════
+//  LOAD GROUPS
+// ═══════════════════════════════════════════
+async function refreshGroups() {
+  const bot = bots[activeBotIdx];
+  if (!bot) return;
+
+  updateTopbar('লোড হচ্ছে...');
+  addLog('info', `"${bot.name}" এর groups লোড করা হচ্ছে...`);
+
+  try {
+    const me = await getMe(bot.token);
+    bot.username = me.username;
+    bot.firstname = me.first_name;
+    updateTopbar(`@${me.username}`);
+    document.getElementById('active-bot-badge').innerHTML =
+      `<span style="color:var(--green)">●</span> @${me.username}`;
+  } catch(e) {
+    updateTopbar('Token Error');
+    document.getElementById('active-bot-badge').innerHTML =
+      `<span style="color:var(--red)">●</span> Error`;
+    addLog('err', `Bot getMe failed: ${e.message}`);
+    toast('Bot token কাজ করছে না: ' + e.message, 'err');
+    renderSidebarGroups();
+    return;
+  }
+
+  try {
+    const updates = await getUpdates(bot.token);
+    const seen = new Map();
+
+    updates.forEach(u => {
+      const chat = u.message?.chat || u.channel_post?.chat ||
+                   u.edited_message?.chat || u.my_chat_member?.chat;
+      if (!chat) return;
+      if (!['group','supergroup','channel'].includes(chat.type)) return;
+      if (!seen.has(chat.id)) {
+        seen.set(chat.id, {
+          id: chat.id,
+          name: chat.title || `Chat ${chat.id}`,
+          type: chat.type,
+          username: chat.username || null
+        });
+      }
+    });
+
+    allGroups = Array.from(seen.values());
+    selectedGroups.clear();
+
+    // record when each group was first detected by the bot (local timestamp)
+    let firstSeenChanged = false;
+    allGroups.forEach(g => {
+      if (!groupFirstSeen[g.id]) {
+        groupFirstSeen[g.id] = new Date().toISOString();
+        firstSeenChanged = true;
+      }
+    });
+    if (firstSeenChanged) saveFirstSeen();
+
+    renderSidebarGroups();
+    renderGroupsDetailPage();
+    renderAIGroupsList();
+    updateStats();
+
+    if (allGroups.length === 0) {
+      addLog('info', 'কোনো group পাওয়া যায়নি। Bot কে group এ add করুন এবং একটি message পাঠান, তারপর Refresh করুন।');
+      toast('Group পাওয়া যায়নি — Bot কে group এ add করুন', 'info');
+    } else {
+      addLog('ok', `${allGroups.length} টি group লোড হয়েছে।`);
+      toast(`${allGroups.length} টি group লোড হয়েছে`, 'ok');
+    }
+  } catch(e) {
+    addLog('err', `Groups লোড ব্যর্থ: ${e.message}`);
+    toast('Groups লোড ব্যর্থ: ' + e.message, 'err');
+  }
+}
+
+function updateTopbar(text) {
+  document.getElementById('tb-subtitle').textContent = text;
+}
+
+// ═══════════════════════════════════════════
+//  SIDEBAR RENDER
+// ═══════════════════════════════════════════
+function renderSidebarGroups() {
+  const el = document.getElementById('group-list-sidebar');
+  el.innerHTML = '';
+
+  if (allGroups.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state" style="padding:20px 10px">
+        <div class="empty-icon">💬</div>
+        <p style="font-size:12px">Bot কে group এ add করুন তারপর Refresh করুন</p>
+      </div>`;
+    return;
+  }
+
+  allGroups.forEach(g => {
+    const item = document.createElement('div');
+    item.className = 'group-item' + (selectedGroups.has(g.id) ? ' selected-for-send' : '');
+    item.dataset.gid = g.id;
+    item.innerHTML = `
+      <div class="group-avatar">${getInitials(g.name)}</div>
+      <div class="group-info">
+        <div class="group-name">${escHtml(g.name)}</div>
+        <div class="group-meta">${typeLabel(g.type)}</div>
+      </div>
+      <div class="group-check">${selectedGroups.has(g.id) ? '✓' : ''}</div>
+    `;
+    item.onclick = () => toggleGroupSelect(g.id, item);
+    el.appendChild(item);
+  });
+
+  updateSelCount();
+}
+
+function toggleGroupSelect(id, el) {
+  if (selectedGroups.has(id)) {
+    selectedGroups.delete(id);
+    el.classList.remove('selected-for-send');
+    el.querySelector('.group-check').textContent = '';
+  } else {
+    selectedGroups.add(id);
+    el.classList.add('selected-for-send');
+    el.querySelector('.group-check').textContent = '✓';
+  }
+  updateSelCount();
+}
+
+function toggleSelectAll() {
+  if (selectedGroups.size === allGroups.length) {
+    selectedGroups.clear();
+  } else {
+    allGroups.forEach(g => selectedGroups.add(g.id));
+  }
+  renderSidebarGroups();
+}
+
+function updateSelCount() {
+  const n = selectedGroups.size;
+  document.getElementById('sel-count').textContent = n;
+  document.getElementById('send-btn').disabled = n === 0;
+}
+
+// ═══════════════════════════════════════════
+//  GROUPS DETAIL PAGE
+// ═══════════════════════════════════════════
+function renderGroupsDetailPage() {
+  const el = document.getElementById('groups-detail-list');
+  el.innerHTML = '';
+  allGroups.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'group-detail-header';
+    div.innerHTML = `
+      <div class="group-detail-avatar">${getInitials(g.name)}</div>
+      <div style="flex:1">
+        <div class="gd-name">${escHtml(g.name)}</div>
+        <div class="gd-id">ID: ${g.id}</div>
+        <div class="gd-type">${typeLabel(g.type)}</div>
+        ${g.username ? `<div style="font-size:12px;color:var(--muted)">@${g.username}</div>` : ''}
+        ${groupFirstSeen[g.id] ? `<div class="gd-seen">🕓 প্রথম শনাক্ত: ${formatDateTime(groupFirstSeen[g.id])} <span style="opacity:.7">(${timeAgoBn(groupFirstSeen[g.id])})</span></div>` : ''}
+        ${aiEnabledGroups.has(g.id) ? `<div class="ai-badge">🤖 AI Auto-Reply চালু আছে</div>` : ''}
+      </div>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="quickSendTo(${g.id})">
+        ✈ পাঠান
+      </button>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function quickSendTo(id) {
+  selectedGroups.clear();
+  selectedGroups.add(id);
+  renderSidebarGroups();
+  showPage('page-send', document.querySelector('.nav-tab'));
+  document.querySelectorAll('.nav-tab')[0].click();
+  toast('Group সিলেক্ট করা হয়েছে — message লিখুন', 'info');
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allGroups.length;
+  document.getElementById('stat-super').textContent = allGroups.filter(g=>g.type==='supergroup').length;
+  document.getElementById('stat-reg').textContent = allGroups.filter(g=>g.type==='group').length;
+  document.getElementById('stat-chan').textContent = allGroups.filter(g=>g.type==='channel').length;
+}
+
+// ═══════════════════════════════════════════
+//  AI AUTO-REPLY (Groq)
+// ═══════════════════════════════════════════
+function renderAISettingsUI() {
+  const keyEl = document.getElementById('groq-key-input');
+  const modelEl = document.getElementById('groq-model-select');
+  const promptEl = document.getElementById('groq-prompt-input');
+  if (!keyEl) return; // page not in DOM (shouldn't happen, but be safe)
+  keyEl.value = groqApiKey;
+  modelEl.value = groqModel;
+  promptEl.value = groqSystemPrompt;
+}
+
+function saveGroqSettingsFromUI() {
+  groqApiKey = document.getElementById('groq-key-input').value.trim();
+  groqModel = document.getElementById('groq-model-select').value;
+  groqSystemPrompt = document.getElementById('groq-prompt-input').value.trim() || groqSystemPrompt;
+  saveGroqSettings();
+  toast('Groq settings সেভ হয়েছে', 'ok');
+}
+
+function renderAIGroupsList() {
+  const el = document.getElementById('ai-group-list');
+  if (!el) return;
+  el.innerHTML = '';
+
+  if (allGroups.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state" style="padding:20px 10px">
+        <div class="empty-icon">💬</div>
+        <p style="font-size:12px">কোনো group পাওয়া যায়নি — আগে Groups লোড করুন</p>
+      </div>`;
+    return;
+  }
+
+  allGroups.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'ai-group-row';
+    const checked = aiEnabledGroups.has(g.id) ? 'checked' : '';
+    row.innerHTML = `
+      <div class="group-avatar">${getInitials(g.name)}</div>
+      <div class="group-info">
+        <div class="group-name">${escHtml(g.name)}</div>
+        <div class="group-meta">${typeLabel(g.type)}</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" ${checked} onchange="toggleAIGroup(${g.id})">
+        <span class="slider"></span>
+      </label>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function toggleAIGroup(id) {
+  if (aiEnabledGroups.has(id)) {
+    aiEnabledGroups.delete(id);
+  } else {
+    aiEnabledGroups.add(id);
+  }
+  saveAIGroups();
+  renderGroupsDetailPage();
+}
+
+function updateAIStatusUI() {
+  const badge = document.getElementById('ai-status-badge');
+  const sub = document.getElementById('ai-status-sub');
+  const startBtn = document.getElementById('ai-start-btn');
+  const stopBtn = document.getElementById('ai-stop-btn');
+  if (!badge) return;
+
+  if (aiPollingActive) {
+    badge.className = 'status-badge badge-ok';
+    badge.innerHTML = '<span class="dot"></span> চালু আছে';
+    sub.textContent = `"${aiActiveBotName}" দিয়ে চলছে — ${aiEnabledGroups.size} টি group`;
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  } else {
+    badge.className = 'status-badge badge-err';
+    badge.innerHTML = '<span class="dot"></span> বন্ধ';
+    sub.textContent = 'বন্ধ আছে';
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
+}
+
+// register a chat discovered while AI-polling, without wiping the existing list
+function registerGroupFromChat(chat) {
+  if (!['group','supergroup','channel'].includes(chat.type)) return;
+  let g = allGroups.find(x => x.id === chat.id);
+  if (!g) {
+    g = { id: chat.id, name: chat.title || `Chat ${chat.id}`, type: chat.type, username: chat.username || null };
+    allGroups.push(g);
+    if (!groupFirstSeen[g.id]) {
+      groupFirstSeen[g.id] = new Date().toISOString();
+      saveFirstSeen();
+    }
+    renderSidebarGroups();
+    renderGroupsDetailPage();
+    renderAIGroupsList();
+    updateStats();
+  } else {
+    g.name = chat.title || g.name;
+    g.username = chat.username || g.username;
+  }
+}
+
+async function getGroqReply(userText) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${groqApiKey}`
+    },
+    body: JSON.stringify({
+      model: groqModel,
+      messages: [
+        { role: 'system', content: groqSystemPrompt },
+        { role: 'user', content: userText }
+      ],
+      max_tokens: 500,
+      temperature: 0.7
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Groq API error');
+  const reply = data.choices?.[0]?.message?.content?.trim();
+  if (!reply) throw new Error('Groq থেকে কোনো reply পাওয়া যায়নি');
+  return reply;
+}
+
+async function handleUpdateForAI(u) {
+  const msg = u.message;
+  if (!msg || !msg.chat) return;
+  const chat = msg.chat;
+
+  // keep the group list in sync with whatever the bot is currently a member of
+  registerGroupFromChat(chat);
+
+  if (!['group','supergroup'].includes(chat.type)) return; // channel posts have no "sender" to reply to
+  if (!aiEnabledGroups.has(chat.id)) return;               // only reply where explicitly enabled
+  if (msg.from?.is_bot) return;                            // never reply to bots — avoids reply loops
+  if (!msg.text) return;                                   // text-only for now (no photos/stickers/etc.)
+
+  try {
+    addLog('info', `[AI] "${chat.title || chat.id}" থেকে message এসেছে: "${msg.text.slice(0, 60)}"`);
+    const reply = await getGroqReply(msg.text);
+    await tgRequest('sendMessage', {
+      chat_id: chat.id,
+      text: reply,
+      reply_to_message_id: msg.message_id
+    }, aiActiveToken);
+    addLog('ok', `[AI] "${chat.title}" এ reply পাঠানো হয়েছে।`);
+  } catch (e) {
+    addLog('err', `[AI] "${chat.title}" এ reply দিতে ব্যর্থ: ${e.message}`);
+  }
+}
+
+async function startAIAutoReply() {
+  if (!groqApiKey) { toast('আগে Groq API key দিয়ে সেভ করুন', 'err'); return; }
+  if (aiEnabledGroups.size === 0) { toast('কমপক্ষে একটি group AI Reply তে যুক্ত করুন', 'err'); return; }
+  const bot = bots[activeBotIdx];
+  if (!bot) { toast('কোনো bot active নেই', 'err'); return; }
+
+  aiActiveToken = bot.token;
+  aiActiveBotName = bot.name;
+
+  try {
+    // skip any old pending updates — only react to messages from "now" onward
+    const latest = await tgRequest('getUpdates', { limit: 1, offset: -1 }, aiActiveToken);
+    aiUpdateOffset = latest.length ? latest[latest.length - 1].update_id + 1 : 0;
+  } catch (e) {
+    toast('AI Auto-Reply শুরু করতে ব্যর্থ: ' + e.message, 'err');
+    return;
+  }
+
+  aiPollingActive = true;
+  updateAIStatusUI();
+  addLog('ok', `[AI] "${bot.name}" দিয়ে Auto-Reply চালু হয়েছে (${aiEnabledGroups.size} টি group এ)।`);
+  toast('AI Auto-Reply চালু হয়েছে', 'ok');
+  aiPollLoop();
+}
+
+function stopAIAutoReply() {
+  aiPollingActive = false;
+  updateAIStatusUI();
+  addLog('info', '[AI] Auto-Reply বন্ধ হয়েছে।');
+  toast('AI Auto-Reply বন্ধ হয়েছে', 'info');
+}
+
+async function aiPollLoop() {
+  while (aiPollingActive) {
+    try {
+      const updates = await tgRequest('getUpdates', {
+        offset: aiUpdateOffset,
+        timeout: 25,
+        allowed_updates: ['message']
+      }, aiActiveToken);
+
+      for (const u of updates) {
+        aiUpdateOffset = u.update_id + 1;
+        await handleUpdateForAI(u);
+        if (!aiPollingActive) break;
+      }
+    } catch (e) {
+      addLog('err', `[AI] Polling সমস্যা: ${e.message}`);
+      await delay(3000); // back off briefly on error before retrying
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SEND MESSAGES
+// ═══════════════════════════════════════════
+function setParseMode(el) {
+  document.querySelectorAll('.compose-opt').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  parseMode = el.dataset.mode;
+}
+
+async function sendMessages() {
+  const text = document.getElementById('msg-text').value.trim();
+  const photoFile = selectedPhotoFile;
+  if (!text && !photoFile) { toast('Message লিখুন বা ছবি যুক্ত করুন', 'err'); return; }
+  if (selectedGroups.size === 0) { toast('কমপক্ষে একটি group সিলেক্ট করুন', 'err'); return; }
+  if (photoFile && text.length > 1024) {
+    toast('ছবির caption সর্বোচ্চ 1024 অক্ষর হতে পারবে', 'err'); return;
+  }
+
+  const bot = bots[activeBotIdx];
+  const groups = allGroups.filter(g => selectedGroups.has(g.id));
+  const prog = document.getElementById('send-progress');
+  const sendBtn = document.getElementById('send-btn');
+
+  sendBtn.disabled = true;
+  prog.style.display = 'flex';
+  prog.innerHTML = '';
+
+  const kind = photoFile ? 'ছবি' : 'message';
+  addLog('info', `"${bot.name}" দিয়ে ${groups.length} টি group এ ${kind} পাঠানো শুরু হচ্ছে...`);
+
+  let ok = 0, fail = 0;
+  let cachedFileId = null; // reuse Telegram's file_id after first upload — avoids re-uploading the same image for every group
+
+  for (const g of groups) {
+    const item = document.createElement('div');
+    item.className = 'prog-item';
+    item.innerHTML = `<span class="prog-spin">⏳</span> <span class="prog-name">${escHtml(g.name)}</span> <span>পাঠানো হচ্ছে...</span>`;
+    prog.appendChild(item);
+
+    try {
+      if (photoFile) {
+        let result;
+        if (cachedFileId) {
+          const params = { chat_id: g.id, photo: cachedFileId };
+          if (text) params.caption = text;
+          if (parseMode) params.parse_mode = parseMode;
+          result = await tgRequest('sendPhoto', params);
+        } else {
+          result = await tgSendPhotoFile(g.id, photoFile, text, parseMode);
+          const sizes = result.photo;
+          if (sizes && sizes.length) cachedFileId = sizes[sizes.length - 1].file_id;
+        }
+      } else {
+        const params = { chat_id: g.id, text };
+        if (parseMode) params.parse_mode = parseMode;
+        await tgRequest('sendMessage', params);
+      }
+      item.innerHTML = `<span>✅</span> <span class="prog-name">${escHtml(g.name)}</span> <span style="color:var(--green)">সফল</span>`;
+      addLog('ok', `✓ "${g.name}" এ ${kind} পাঠানো সফল হয়েছে`);
+      ok++;
+    } catch(e) {
+      item.innerHTML = `<span>❌</span> <span class="prog-name">${escHtml(g.name)}</span> <span style="color:var(--red)">${escHtml(e.message)}</span>`;
+      addLog('err', `✗ "${g.name}" এ পাঠাতে ব্যর্থ: ${e.message}`);
+      fail++;
+    }
+
+    // small delay to avoid flood
+    await delay(300);
+  }
+
+  sendBtn.disabled = false;
+  const summary = `সম্পন্ন: ${ok} সফল, ${fail} ব্যর্থ`;
+  addLog(fail === 0 ? 'ok' : 'err', summary);
+  toast(summary, fail === 0 ? 'ok' : 'err');
+  save();
+}
+
+function clearMsg() {
+  document.getElementById('msg-text').value = '';
+  document.getElementById('send-progress').style.display = 'none';
+  document.getElementById('send-progress').innerHTML = '';
+  removePhoto();
+}
+
+// ═══════════════════════════════════════════
+//  PHOTO ATTACH
+// ═══════════════════════════════════════════
+function handlePhotoSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    toast('শুধুমাত্র ছবি ফাইল নির্বাচন করুন', 'err');
+    e.target.value = '';
+    return;
+  }
+  const maxSize = 10 * 1024 * 1024; // Telegram's practical limit for bot photo uploads
+  if (file.size > maxSize) {
+    toast('ছবির সাইজ 10MB এর বেশি হতে পারবে না', 'err');
+    e.target.value = '';
+    return;
+  }
+
+  selectedPhotoFile = file;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('photo-preview-img').src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  document.getElementById('photo-preview-name').textContent = file.name;
+  document.getElementById('photo-preview-size').textContent = formatFileSize(file.size);
+  document.getElementById('photo-preview-wrap').style.display = 'block';
+  document.getElementById('photo-attach-btn').textContent = '📷 ছবি পরিবর্তন করুন';
+  document.getElementById('caption-limit-note').style.display = 'block';
+  document.getElementById('msg-text').placeholder = 'ছবির caption (ঐচ্ছিক) লিখুন...';
+}
+
+function removePhoto() {
+  selectedPhotoFile = null;
+  document.getElementById('msg-photo').value = '';
+  document.getElementById('photo-preview-wrap').style.display = 'none';
+  document.getElementById('photo-attach-btn').textContent = '📷 ছবি যুক্ত করুন';
+  document.getElementById('caption-limit-note').style.display = 'none';
+  document.getElementById('msg-text').placeholder = "এখানে message লিখুন...\n\nMarkdown সাপোর্ট: **bold**, _italic_, `code`, [link](url)";
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// ═══════════════════════════════════════════
+//  LOG
+// ═══════════════════════════════════════════
+function addLog(type, msg) {
+  const ts = new Date().toLocaleTimeString('en-GB');
+  activityLog.push({ type, msg, ts });
+  renderLiveLog();
+  renderFullLog();
+}
+
+function renderLiveLog() {
+  const el = document.getElementById('live-log');
+  const last = activityLog.slice(-20);
+  el.innerHTML = last.map(e =>
+    `<div class="log-entry log-${e.type}">[${e.ts}] ${escHtml(e.msg)}</div>`
+  ).join('') || '<div class="log-entry log-info">কোনো কার্যক্রম নেই।</div>';
+  el.scrollTop = el.scrollHeight;
+}
+
+function renderFullLog() {
+  const el = document.getElementById('full-log');
+  el.innerHTML = activityLog.slice().reverse().map(e =>
+    `<div class="log-entry log-${e.type}">[${e.ts}] ${escHtml(e.msg)}</div>`
+  ).join('') || '<div class="log-entry log-info">কোনো কার্যক্রম নেই।</div>';
+}
+
+function clearLog() {
+  activityLog = [];
+  renderLiveLog();
+  renderFullLog();
+}
+
+function clearFullLog() {
+  activityLog = [];
+  save();
+  renderLiveLog();
+  renderFullLog();
+  toast('Log মুছে ফেলা হয়েছে', 'ok');
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(pageId, tabEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  if (tabEl) tabEl.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+function toast(msg, type='info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function getInitials(name) {
+  return name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || '?';
+}
+function typeLabel(t) {
+  return { group:'Group', supergroup:'Supergroup', channel:'Channel' }[t] || t;
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function formatDateTime(iso) {
+  const d = new Date(iso);
+  const datePart = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  const timePart = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  return `${datePart}, ${timePart}`;
+}
+
+function timeAgoBn(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return 'এইমাত্র';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} মিনিট আগে`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} ঘণ্টা আগে`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `${day} দিন আগে`;
+  const month = Math.floor(day / 30);
+  if (month < 12) return `${month} মাস আগে`;
+  const year = Math.floor(month / 12);
+  return `${year} বছর আগে`;
+}
+
+// ═══════════════════════════════════════════
+//  VERCEL ENV SUPPORT
+//  Set TELEGRAM_BOT_TOKENS env var as JSON:
+//  [{"name":"Bot1","token":"..."},{"name":"Bot2","token":"..."}]
+//  OR single token: TELEGRAM_BOT_TOKEN=123:abc...
+// ═══════════════════════════════════════════
+function loadEnvTokens() {
+  // These placeholders are replaced at build/runtime via Vercel env injection.
+  // If you deploy to Vercel, add environment variables and they will be
+  // injected below by your _middleware or a tiny API route.
+  // For GitHub Pages / static use, just use the UI to add tokens.
+  // The app saves tokens in localStorage so you only add them once.
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+load();
+loadEnvTokens();
+loadGroqSettings();
+loadAIGroups();
+renderSetupTokens();
+renderFullLog();
+renderAISettingsUI();
+renderAIGroupsList();
+updateAIStatusUI();
+
+// Auto-enter if tokens already saved
+if (bots.length > 0) {
+  // small delay for UX
+  setTimeout(() => {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    renderBotSelector();
+    refreshGroups();
+  }, 400);
+}
+</script>
+</body>
+</html>
